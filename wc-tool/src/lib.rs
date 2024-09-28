@@ -22,6 +22,10 @@ impl ProgArgs {
 
         let mut opts:Vec<ProgOption> = vec![];
 
+        if args.len() < 1 {
+            panic!("Call with atleast file to process: E.g wc-tool test.txt");
+        }
+
         if count_lines {
             opts.push(CountLines);
         }
