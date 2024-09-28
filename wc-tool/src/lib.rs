@@ -20,10 +20,6 @@ impl ProgArgs {
         let count_words = args.iter().any(|arg| arg.eq_ignore_ascii_case("-w"));
         let count_chars : bool = args.iter().any(|arg: &String| arg.eq_ignore_ascii_case("-m"));
 
-        if !count_bytes && !count_lines && !count_words && !count_chars {
-            panic!("Specify an option either -c or -l or -w or -m")
-        }
-
         let mut opts:Vec<ProgOption> = vec![];
 
         if count_lines {
@@ -41,6 +37,11 @@ impl ProgArgs {
         if count_chars {
             opts.push(CountChars);
         }
+
+        if !count_bytes && !count_lines && !count_words && !count_chars {
+            opts.extend([CountLines, CountWords, CountBytes]);
+        }
+
 
         let file = args.last().unwrap();
 
@@ -69,7 +70,7 @@ pub fn process(prog_args: ProgArgs) -> Result<(),  Box<dyn Error>> {
         match arg {
             CountLines => {
                 let num_lines: usize = count_content_lines(&contents);
-                output.write_str(format!("{num_lines} ").as_str()).unwrap()
+                output.write_str(format!("{num_lines}  ").as_str()).unwrap()
             }
             CountBytes => {
                 let num_bytes = count_content_bytes(&contents);
@@ -77,16 +78,16 @@ pub fn process(prog_args: ProgArgs) -> Result<(),  Box<dyn Error>> {
             }
             CountWords => {
                 let num_words: usize = count_content_words(&contents);
-                output.write_str(format!("{num_words} ").as_str()).unwrap();
+                output.write_str(format!("{num_words}  ").as_str()).unwrap();
             }
             CountChars => {
                 let num_chars: usize = count_content_characters(&contents);
-                output.write_str(format!("{num_chars} ").as_str()).unwrap();
+                output.write_str(format!("{num_chars}  ").as_str()).unwrap();
             },
         }
     }
 
-    println!("{} {}", output.to_string(), &prog_args.filename);
+    println!("{}{}", output.to_string(), &prog_args.filename);
 
     Ok(())
 }
