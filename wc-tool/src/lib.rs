@@ -2,14 +2,13 @@ use std::{error::Error};
 use std::fmt::Write;
 use std::{fs, io};
 use std::io::{BufRead, Read};
-// use clap::{Parser, command};
 use crate::ProgArgs::{File, StdIn};
 use crate::ProgOption::{CountBytes, CountLines, CountWords, CountChars};
 
 
 pub enum ProgArgs {
-    File(ProgArgsForFile),
-    StdIn(ProgArgsForStdin)
+    File(FileArgs),
+    StdIn(StdInArgs)
 }
 impl ProgArgs {
 
@@ -46,17 +45,17 @@ impl ProgArgs {
          if args.len() < 1 {
             let mut contents: Vec<u8> = vec![];
             io::stdin().read_to_end(&mut contents).expect("failed to read from stdin");
-             let arg = ProgArgsForStdin {
+             let arg = StdInArgs {
                  flag: opts,
-                 contents: contents
+                 contents
              };
              StdIn(arg)
         } else {
             let file = args.last().unwrap();
             let contents = fs::read(file).expect("failed to read from file");
-             let arg = ProgArgsForFile {
+             let arg = FileArgs {
                  flag: opts,
-                 contents: contents,
+                 contents,
                  filename: file.to_string()
              };
              File(arg)
@@ -76,42 +75,34 @@ pub enum ProgOption {
     CountChars
 }
 
-pub struct ProgArgsForFile {
+pub struct FileArgs {
     flag: Vec<ProgOption>,
     contents: Vec<u8>,
     filename: String
 }
 
-pub struct ProgArgsForStdin {
+pub struct StdInArgs {
     flag: Vec<ProgOption>,
     contents: Vec<u8>
 }
 
-//#[derive(Debug, Parser)]
-//#[command(name = "wc-tool")]
-//#[command(about = "Count words, characters, bytes or and lines in a text file")]
-//struct AppArgs {
-//    #[arg(short, long)]
-//    #[command(name = "")]
-//    count_bytes: String
-//}
 
 /// Perform whole program operation. Parsing arguments and producing outputs
 pub fn process(prog_args: ProgArgs) -> Result<(),  Box<dyn Error>> {
     match prog_args {
         StdIn(args) => {
-            let output: String = vem(args.flag, &args.contents);
+            let output: String = parse_contents(args.flag, &args.contents);
             print_output_from_stdin(&output);
         },
         File(args) => {
-            let output = vem(args.flag, &args.contents);
+            let output = parse_contents(args.flag, &args.contents);
             print_output_from_file(&output, &args.filename);
         }
     };
     Ok(())
 }
 
-fn vem(flags: Vec<ProgOption>, contents: &Vec<u8>) -> String {
+fn parse_contents(flags: Vec<ProgOption>, contents: &Vec<u8>) -> String {
     let mut output: String = String::new();
 
     for arg in flags {
