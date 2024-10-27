@@ -1,17 +1,17 @@
-use core::panic;
-use std::error::Error;
+use std::{error::Error};
 use std::fmt::Write;
-use std::fs;
-use std::io::BufRead;
+use std::{fs, io};
+use std::io::{BufRead, Read};
+// use clap::{Parser, command};
+use crate::ProgArgs::{File, StdIn};
 use crate::ProgOption::{CountBytes, CountLines, CountWords, CountChars};
 
 
-pub struct ProgArgs {
-    flag: Vec<ProgOption>,
-    filename: String
+pub enum ProgArgs {
+    File(ProgArgsForFile),
+    StdIn(ProgArgsForStdin)
 }
 impl ProgArgs {
-
 
     pub fn build(args: impl Iterator<Item = String>) -> Self {
         let args: Vec<String> = args.skip(1).collect();
@@ -22,9 +22,6 @@ impl ProgArgs {
 
         let mut opts:Vec<ProgOption> = vec![];
 
-        if args.len() < 1 {
-            panic!("Call with atleast file to process: E.g wc-tool test.txt");
-        }
 
         if count_lines {
             opts.push(CountLines);
@@ -46,14 +43,29 @@ impl ProgArgs {
             opts.extend([CountLines, CountWords, CountBytes]);
         }
 
-
-        let file = args.last().unwrap();
-
-
-        Self {
-            flag: opts,
-            filename: file.to_owned()
+         if args.len() < 1 {
+            let mut contents: Vec<u8> = vec![];
+            io::stdin().read_to_end(&mut contents).expect("failed to read from stdin");
+             let arg = ProgArgsForStdin {
+                 flag: opts,
+                 contents: contents
+             };
+             StdIn(arg)
+        } else {
+            let file = args.last().unwrap();
+            let contents = fs::read(file).expect("failed to read from file");
+             let arg = ProgArgsForFile {
+                 flag: opts,
+                 contents: contents,
+                 filename: file.to_string()
+             };
+             File(arg)
         }
+
+        // Self {
+        //     flag: opts,
+        //     contents
+        // }
     }
 }
 
@@ -64,16 +76,48 @@ pub enum ProgOption {
     CountChars
 }
 
+pub struct ProgArgsForFile {
+    flag: Vec<ProgOption>,
+    contents: Vec<u8>,
+    filename: String
+}
+
+pub struct ProgArgsForStdin {
+    flag: Vec<ProgOption>,
+    contents: Vec<u8>
+}
+
+//#[derive(Debug, Parser)]
+//#[command(name = "wc-tool")]
+//#[command(about = "Count words, characters, bytes or and lines in a text file")]
+//struct AppArgs {
+//    #[arg(short, long)]
+//    #[command(name = "")]
+//    count_bytes: String
+//}
 
 /// Perform whole program operation. Parsing arguments and producing outputs
 pub fn process(prog_args: ProgArgs) -> Result<(),  Box<dyn Error>> {
-    let contents = fs::read(&prog_args.filename)?;
+    match prog_args {
+        StdIn(args) => {
+            let output: String = vem(args.flag, &args.contents);
+            print_output_from_stdin(&output);
+        },
+        File(args) => {
+            let output = vem(args.flag, &args.contents);
+            print_output_from_file(&output, &args.filename);
+        }
+    };
+    Ok(())
+}
+
+fn vem(flags: Vec<ProgOption>, contents: &Vec<u8>) -> String {
     let mut output: String = String::new();
 
-    for arg in prog_args.flag {
+    for arg in flags {
         match arg {
             CountLines => {
-                let num_lines: usize = count_content_lines(&contents);
+                let num_lines: usize = count_content_lines(contents);
                 output.write_str(format!("{num_lines}  ").as_str()).unwrap()
             }
             CountBytes => {
@@ -90,11 +134,17 @@ pub fn process(prog_args: ProgArgs) -> Result<(),  Box<dyn Error>> {
             },
         }
     }
-
-    println!("{}{}", output.to_string(), &prog_args.filename);
-
-    Ok(())
+    output
 }
+
+fn print_output_from_file(content: &str, filename: &str) {
+    println!("{content}{filename}");
+}
+
+fn print_output_from_stdin(content: &str) {
+    println!("{content}");
+}
+
 
 fn count_content_characters(contents: &[u8]) -> usize {
     String::from_utf8(contents.to_vec()).unwrap().chars().count()
