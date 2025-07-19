@@ -4,5 +4,6 @@ version = "0.1"
 
 [workspace]
 members = [
-    "wc-tool"
+    "wc-tool",
+    "json-parser"
 ]
