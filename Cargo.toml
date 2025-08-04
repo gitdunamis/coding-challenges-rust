@@ -1,8 +1,9 @@
-name = "coding-challenges-rust"
-version = "0.1"
+# name = "coding-challenges-rust"
+# version = "0.1"
 #edition = "2021"
 
 [workspace]
+resolver = "3"
 members = [
     "wc-tool",
     "json-parser",

@@ -5,7 +5,7 @@ use std::{env, fs};
 
 pub fn show(programs: Vec<String>) {
     println!("Programs to search for: {}", programs.join(", "));
-    let os_path = match std::env::var("PATH") {
+    let os_path = match env::var("PATH") {
         Ok(path) => path,
         Err(_) => {
             eprintln!("Error: Could not read PATH environment");
@@ -13,7 +13,6 @@ pub fn show(programs: Vec<String>) {
         }
     };
 
-    // let paths = os_path.split(':').map(|p| Path::new(p)).collect::<Vec<&Path>>();
     let paths = env::split_paths(&os_path)
         .filter(|path| path.is_dir())
         .collect::<Vec<PathBuf>>();
@@ -24,21 +23,23 @@ pub fn show(programs: Vec<String>) {
         }
 
         if let Ok(entries) = fs::read_dir(&path) {
-            for entry in entries.filter_map(|entry| entry.ok()) {
-                // if let Ok(entry) = entry && entry.path().is_file(){
-                    // let filename = entry.file_name().to_str().unwrap().to_string();
+            let entries: Vec<_> = entries.flatten().collect();
+            for entry in &entries {
+                if !entry.path().is_file() {
+                    continue;
+                }
+            }
+            for entry in &entries {
                 if !entry.path().is_file() {
                     continue;
                 }
 
-                // let filename = remove_extension(&entry.file_name().to_str().unwrap().to_string());
                 if let Some(f) = entry.path().file_stem() {
                     let filename = f.to_string_lossy().into_owned();
-                    if programs.contains(&filename) && is_executable(&entry) {
+                    if programs.contains(&filename) && is_executable(entry) {
                         println!("{}", entry.path().display());
                     }
                 }
-                // }
             }
         }
         else {
