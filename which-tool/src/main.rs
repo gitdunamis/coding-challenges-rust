@@ -7,5 +7,5 @@ mod commands;
 fn main() {
     let args: Which = cli::Which::parse();
 
-    commands::show::show(args.programs)
+    commands::show::show(args)
 }
