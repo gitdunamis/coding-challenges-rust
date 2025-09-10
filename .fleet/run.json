@@ -1,0 +1,29 @@
+{
+    "configurations": [
+        {
+            "type": "cargo",
+            "name": "Configuration With -c -l",
+            "cargoArgs": ["run"],
+            "executableArgs": ["-c", "-l", "wc-tool/test.txt"]
+        },
+        {
+            "type": "cargo",
+            "name": "Configuration With -c",
+            "cargoArgs": ["run"],
+            "executableArgs": ["-c", "wc-tool/test.txt"]
+        },
+        {
+            "type": "cargo",
+            "name": "Configuration With -l",
+            "cargoArgs": ["run"],
+            "executableArgs": ["-l", "wc-tool/test.txt"]
+        },
+        {
+            "type": "cargo",
+            "name": "Configuration With No Option",
+            "cargoArgs": ["run"],
+            "executableArgs": ["-l", "wc-tool/test.txt"]
+        }
+
+    ]
+}
